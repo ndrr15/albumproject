@@ -1,0 +1,93 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>🎵 Gestor de Álbumes</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Álbumes</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-card *ngIf="!apiConnected" color="warning">
+    <ion-card-header>
+      <ion-card-title>⚠️ Alerta</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      No se puede conectar a la API. Asegúrate que el servidor esté corriendo en http://localhost:5000
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card *ngIf="apiConnected" color="success">
+    <ion-card-header>
+      <ion-card-title>✅ Conectado</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      API conectada correctamente
+    </ion-card-content>
+  </ion-card>
+
+  <div id="container">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Agregar Álbum</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="floating">Título</ion-label>
+          <ion-input [(ngModel)]="newAlbum.title" placeholder="Ej: Abbey Road"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="floating">Artista</ion-label>
+          <ion-input [(ngModel)]="newAlbum.artist" placeholder="Ej: The Beatles"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="floating">Género</ion-label>
+          <ion-input [(ngModel)]="newAlbum.genre" placeholder="Ej: Rock"></ion-input>
+        </ion-item>
+        <ion-button expand="block" (click)="addAlbum()" class="ion-margin-top">
+          <ion-icon name="add"></ion-icon>
+          Agregar
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="albums.length > 0">
+      <ion-card-header>
+        <ion-card-title>Álbumes ({{ albums.length }})</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list *ngFor="let album of albums">
+          <ion-item-sliding>
+            <ion-item>
+              <ion-label>
+                <h2>{{ album.title }}</h2>
+                <p>{{ album.artist }} - {{ album.genre }}</p>
+              </ion-label>
+            </ion-item>
+            <ion-item-options side="end">
+              <ion-item-option (click)="deleteAlbum(album.id)" color="danger">
+                <ion-icon slot="icon-only" name="trash"></ion-icon>
+              </ion-item-option>
+            </ion-item-options>
+          </ion-item-sliding>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="albums.length === 0 && !loading">
+      <ion-card-content>
+        <p>No hay álbumes aún. ¡Agrega uno!</p>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="loading">
+      <ion-card-content>
+        <ion-spinner></ion-spinner>
+        <p>Cargando...</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
