@@ -3,12 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-interface Album {
-  id?: number;
-  title: string;
-  artist: string;
-  genre: string;
-  releaseDate?: string;
+interface Sticker {
+  number: number;
+  name?: string;
+  owned: number; // how many copies the user has of this sticker
 }
 
 @Component({
@@ -18,74 +16,103 @@ interface Album {
   styleUrl: './app.scss'
 })
 export class App implements OnInit {
-  albums: Album[] = [];
-  apiConnected = false;
-  loading = false;
-  newAlbum: Album = { title: '', artist: '', genre: '' };
-  private apiUrl = 'http://localhost:5000/api/albums';
+  stickers: Sticker[] = [];
+  totalStickers = 670; // default album size (user can change)
+  newStickerNumber: number | null = null;
+  newStickerName = '';
+  newStickerCount = 1;
+  private storageKey = 'paniniCollection';
 
   constructor(private http: HttpClient) {}
 
   ngOnInit() {
-    this.checkApiConnection();
-    this.loadAlbums();
+    this.loadCollection();
   }
 
-  checkApiConnection() {
-    this.http.get<any>(`${this.apiUrl}`).subscribe(
-      () => {
-        this.apiConnected = true;
-      },
-      () => {
-        this.apiConnected = false;
-        console.warn('No se puede conectar a la API en http://localhost:5000');
+  loadCollection() {
+    try {
+      const raw = localStorage.getItem(this.storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        this.stickers = parsed.stickers || [];
+        this.totalStickers = parsed.totalStickers || this.totalStickers;
       }
-    );
+    } catch (e) {
+      console.warn('No se pudo cargar la colección desde localStorage', e);
+      this.stickers = [];
+    }
   }
 
-  loadAlbums() {
-    this.loading = true;
-    this.http.get<Album[]>(this.apiUrl).subscribe(
-      (data) => {
-        this.albums = data;
-        this.loading = false;
-      },
-      () => {
-        this.loading = false;
-      }
-    );
+  saveCollection() {
+    const payload = { stickers: this.stickers, totalStickers: this.totalStickers };
+    localStorage.setItem(this.storageKey, JSON.stringify(payload));
   }
 
-  addAlbum() {
-    if (!this.newAlbum.title || !this.newAlbum.artist || !this.newAlbum.genre) {
-      alert('Por favor completa todos los campos');
+  addSticker() {
+    if (!this.newStickerNumber || this.newStickerNumber <= 0 || this.newStickerNumber > this.totalStickers) {
+      alert('Ingresa un número de cromo válido');
       return;
     }
 
-    this.http.post<Album>(this.apiUrl, this.newAlbum).subscribe(
-      (album) => {
-        this.albums.push(album);
-        this.newAlbum = { title: '', artist: '', genre: '' };
-      },
-      (error) => {
-        alert('Error al agregar álbum');
-        console.error(error);
-      }
-    );
+    const existing = this.stickers.find(s => s.number === this.newStickerNumber);
+    if (existing) {
+      existing.owned += this.newStickerCount || 1;
+    } else {
+      this.stickers.push({ number: this.newStickerNumber, name: this.newStickerName || undefined, owned: this.newStickerCount || 1 });
+      this.stickers.sort((a,b) => a.number - b.number);
+    }
+
+    this.newStickerNumber = null;
+    this.newStickerName = '';
+    this.newStickerCount = 1;
+    this.saveCollection();
   }
 
-  deleteAlbum(id?: number) {
-    if (!id) return;
-    
-    this.http.delete(`${this.apiUrl}/${id}`).subscribe(
-      () => {
-        this.albums = this.albums.filter((a) => a.id !== id);
-      },
-      (error) => {
-        alert('Error al eliminar álbum');
-        console.error(error);
+  increment(s: Sticker) {
+    s.owned++;
+    this.saveCollection();
+  }
+
+  decrement(s: Sticker) {
+    if (s.owned > 0) s.owned--;
+    if (s.owned === 0) this.removeSticker(s.number);
+    else this.saveCollection();
+  }
+
+  removeSticker(number: number) {
+    this.stickers = this.stickers.filter(s => s.number !== number);
+    this.saveCollection();
+  }
+
+  getUniqueOwnedCount() {
+    return this.stickers.filter(s => s.owned > 0).length;
+  }
+
+  getTotalOwnedCount() {
+    return this.stickers.reduce((acc, s) => acc + s.owned, 0);
+  }
+
+  getDuplicates() {
+    return this.stickers.filter(s => s.owned > 1);
+  }
+
+  getMissingNumbers(limit = 200) {
+    // return up to `limit` missing sticker numbers for performance
+    const have = new Set(this.stickers.map(s => s.number));
+    const missing: number[] = [];
+    for (let i = 1; i <= this.totalStickers; i++) {
+      if (!have.has(i)) {
+        missing.push(i);
+        if (missing.length >= limit) break;
       }
-    );
+    }
+    return missing;
+  }
+
+  clearCollection() {
+    if (!confirm('¿Borrar toda la colección?')) return;
+    this.stickers = [];
+    localStorage.removeItem(this.storageKey);
   }
 }
 

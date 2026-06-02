@@ -104,42 +104,60 @@
 </style>
 
 <main>
-  <h1>?? Gestor de �lbumes</h1>
-  <div class="status" [class.error]="!apiConnected">
-    {{ apiConnected ? '? API conectada' : '? API no disponible' }}
-  </div>
+  <h1>Gestor de cromos - Álbum FIFA 2026</h1>
 
-  <div>
-    <h2>Agregar �lbum</h2>
-    <div class="form-group">
-      <label>T�tulo</label>
-      <input [(ngModel)]="newAlbum.title" placeholder="Ej: Abbey Road" />
+  <section class="status">
+    <div><strong>Tamaño del álbum:</strong>
+      <input type="number" [(ngModel)]="totalStickers" min="1" style="width:120px; margin-left:8px;" />
+      <button (click)="saveCollection()">Guardar</button>
+      <button (click)="clearCollection()" class="delete-btn">Borrar colección</button>
     </div>
-    <div class="form-group">
-      <label>Artista</label>
-      <input [(ngModel)]="newAlbum.artist" placeholder="Ej: The Beatles" />
-    </div>
-    <div class="form-group">
-      <label>G�nero</label>
-      <input [(ngModel)]="newAlbum.genre" placeholder="Ej: Rock" />
-    </div>
-    <button (click)="addAlbum()">Agregar �lbum</button>
-  </div>
+  </section>
 
-  <div class="album-list" *ngIf="albums.length > 0">
-    <h2>�lbumes ({{ albums.length }})</h2>
-    <div *ngFor="let album of albums" class="album-item">
-      <h3>{{ album.title }}</h3>
-      <p><strong>Artista:</strong> {{ album.artist }}</p>
-      <p><strong>G�nero:</strong> {{ album.genre }}</p>
-      <p><strong>Fecha:</strong> {{ album.releaseDate | date:"dd/MM/yyyy" }}</p>
-      <button class="delete-btn" (click)="deleteAlbum(album.id)">Eliminar</button>
+  <section style="margin-top:1.5rem;">
+    <h2>Agregar / Registrar cromo</h2>
+    <div class="form-group">
+      <label>Número</label>
+      <input type="number" [(ngModel)]="newStickerNumber" placeholder="Ej: 123" />
     </div>
-  </div>
-  <div *ngIf="albums.length === 0 && !loading">
-    <p>No hay �lbumes a�n. �Agrega uno!</p>
-  </div>
-  <div *ngIf="loading">
-    <p>Cargando...</p>
-  </div>
+    <div class="form-group">
+      <label>Nombre (opcional)</label>
+      <input [(ngModel)]="newStickerName" placeholder="Ej: Lionel Messi" />
+    </div>
+    <div class="form-group">
+      <label>Cantidad</label>
+      <input type="number" [(ngModel)]="newStickerCount" min="1" style="width:100px;" />
+    </div>
+    <button (click)="addSticker()">Agregar / Actualizar</button>
+  </section>
+
+  <section style="margin-top:1.5rem;">
+    <h2>Resumen</h2>
+    <p><strong>Cromos únicos poseídos:</strong> {{ getUniqueOwnedCount() }} / {{ totalStickers }}</p>
+    <p><strong>Total de cromos (incluyendo repetidos):</strong> {{ getTotalOwnedCount() }}</p>
+    <p><strong>Repetidos:</strong> {{ getDuplicates().length }}</p>
+  </section>
+
+  <section class="album-list" style="margin-top:1.5rem;">
+    <h2>Listado de cromos</h2>
+    <div *ngIf="stickers.length === 0"><p>No hay cromos registrados aún.</p></div>
+    <div *ngFor="let s of stickers" class="album-item">
+      <h3>#{{ s.number }} <small style="color:#777;">{{ s.name }}</small></h3>
+      <p><strong>Cantidad:</strong> {{ s.owned }}</p>
+      <button (click)="increment(s)"> + </button>
+      <button (click)="decrement(s)"> - </button>
+      <button class="delete-btn" (click)="removeSticker(s.number)">Eliminar</button>
+    </div>
+  </section>
+
+  <section style="margin-top:1.5rem;">
+    <h2>Cromos faltantes (muestra parcial)</h2>
+    <div *ngIf="getMissingNumbers().length === 0">¡Completo!</div>
+    <div *ngIf="getMissingNumbers().length > 0">
+      <p>Mostrando primeros {{ getMissingNumbers().length }} faltantes:</p>
+      <div style="display:flex; flex-wrap:wrap; gap:6px;">
+        <span *ngFor="let m of getMissingNumbers()" style="background:#f5f5f5; padding:6px 8px; border-radius:4px;">{{ m }}</span>
+      </div>
+    </div>
+  </section>
 </main>
